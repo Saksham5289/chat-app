@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WebSocket Chat</title>
+  </head>
+  <body>
+    <h1>WebSocket Chat</h1>
+    <div>
+      <label for="receiverId">Receiver ID:</label>
+      <input type="number" id="receiverId" placeholder="Enter receiver ID" />
+      <label for="senderId">Sender ID:</label>
+      <input type="number" id="senderId" placeholder="Enter sender ID" />
+    </div>
+    <div>
+      <label for="message">Message:</label>
+      <input type="text" id="message" placeholder="Enter your message" />
+    </div>
+    <button id="sendButton">Send Message</button>
+    <button id="createConnection">Create Connection</button>
+    <div id="messages"></div>
+
+    <script>
+      const ws = new WebSocket("ws://localhost:3000");
+      let userId = 2; // Starting user ID
+
+      ws.onopen = () => {
+        console.log("Connected to the server");
+        // Send the connect message
+        const connectMessage = JSON.stringify({
+          type: "connect",
+          userId: userId, // Use the starting user ID
+        });
+        ws.send(connectMessage);
+      };
+
+      ws.onmessage = (event) => {
+        const messageContainer = document.getElementById("messages");
+        const messageElement = document.createElement("p");
+        messageElement.textContent = "Message from server: " + event.data;
+        messageContainer.appendChild(messageElement);
+      };
+
+      ws.onclose = () => {
+        console.log("Disconnected from the server");
+      };
+
+      ws.onerror = (error) => {
+        console.error("WebSocket error:", error);
+      };
+
+      // Send message on button click
+      document.getElementById("sendButton").addEventListener("click", () => {
+        const receiverId = parseInt(
+          document.getElementById("receiverId").value
+        );
+        const senderId = parseInt(document.getElementById("senderId").value);
+        const content = document.getElementById("message").value;
+        const chatMessage = JSON.stringify({
+          type: "message",
+          senderId, // Use the sender ID from the input field
+          receiverId, // The ID from the input field
+          content, // The content from the input field
+        });
+        ws.send(chatMessage);
+      });
+
+      document
+        .getElementById("createConnection")
+        .addEventListener("click", () => {
+          userId++; // Increment user ID for a new connection
+          const connectMessage = JSON.stringify({
+            type: "connect",
+            userId: userId, // Use the new user ID
+          });
+          ws.send(connectMessage);
+        });
+    </script>
+  </body>
+</html>

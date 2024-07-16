@@ -1,0 +1,47 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id               Int               @id @default(autoincrement())
+  username         String            @unique
+  connections      Connection[]      @relation("UserConnections")
+  friendConnections Connection[]     @relation("FriendConnections")
+  pendingRequests  PendingRequest[]  @relation("UserPendingRequests")
+  requesterPendingRequests PendingRequest[] @relation("RequesterPendingRequests")
+  sentMessages     Message[]         @relation("SentMessages")
+  receivedMessages Message[]         @relation("ReceivedMessages")
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  content   String
+  createdAt DateTime @default(now())
+  senderId  Int
+  receiverId Int
+  sender    User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiver  User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+}
+
+model Connection {
+  id       Int @id @default(autoincrement())
+  userId   Int
+  friendId Int
+  user     User @relation("UserConnections", fields: [userId], references: [id])
+  friend   User @relation("FriendConnections", fields: [friendId], references: [id])
+  @@unique([userId, friendId])
+}
+
+model PendingRequest {
+  id         Int @id @default(autoincrement())
+  userId     Int
+  requesterId Int
+  user       User @relation("UserPendingRequests", fields: [userId], references: [id])
+  requester  User @relation("RequesterPendingRequests", fields: [requesterId], references: [id])
+  @@unique([userId, requesterId])
+}
