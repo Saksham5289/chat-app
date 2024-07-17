@@ -16,15 +16,34 @@ const express_1 = __importDefault(require("express"));
 const http_1 = __importDefault(require("http"));
 const ws_1 = require("ws");
 const client_1 = require("@prisma/client");
+const bcrypt_1 = __importDefault(require("bcrypt"));
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const cors_1 = __importDefault(require("cors"));
 const app = (0, express_1.default)();
 const port = 3000;
 const server = http_1.default.createServer(app);
 const wss = new ws_1.WebSocketServer({ server });
 const prisma = new client_1.PrismaClient();
-// Store connected clients with their user IDs
-let clients = [];
+const jwtSecret = "your_jwt_secret";
+// const cors = require("cors");
 // Middleware to parse JSON requests
+app.use((0, cors_1.default)());
 app.use(express_1.default.json());
+// Helper function to verify JWT
+const authenticateToken = (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.split(" ")[1];
+    if (!token)
+        return res.sendStatus(401);
+    jsonwebtoken_1.default.verify(token, jwtSecret, (err, user) => {
+        if (err)
+            return res.sendStatus(403);
+        // req.user = user;
+        req.headers.userId = user.userId;
+        next();
+    });
+};
+let clients = [];
 // Handle WebSocket connections
 wss.on("connection", (ws) => {
     let userId;
@@ -33,25 +52,17 @@ wss.on("connection", (ws) => {
         if (parsedMessage.type === "connect") {
             userId = parsedMessage.userId;
             clients.push({ userId, ws });
-            clients.forEach((a) => {
-                console.log(a.userId);
-            });
         }
         if (parsedMessage.type === "message") {
             const { senderId, receiverId, content } = parsedMessage;
             // Save message to database
-            // const newMessage = await prisma.message.create({
-            //   data: {
-            //     content,
-            //     senderId,
-            //     receiverId,
-            //   },
-            // });
-            const newMessage = {
-                content,
-                senderId,
-                receiverId,
-            };
+            const newMessage = yield prisma.message.create({
+                data: {
+                    content,
+                    senderId,
+                    receiverId,
+                },
+            });
             // Find the recipient client and send the message if connected
             const recipientClient = clients.find((client) => client.userId === receiverId);
             if (recipientClient && recipientClient.ws.readyState === ws_1.WebSocket.OPEN) {
@@ -71,9 +82,41 @@ wss.on("connection", (ws) => {
 app.get("/health", (req, res) => {
     res.json({ msg: "I am healthy" });
 });
+// User registration
+app.post("/signup", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { username, password } = req.body;
+    const hashedPassword = yield bcrypt_1.default.hash(password, 10);
+    try {
+        const newUser = yield prisma.user.create({
+            data: {
+                username,
+                password: hashedPassword,
+            },
+        });
+        res.json(newUser);
+    }
+    catch (error) {
+        res.status(400).json({ error: "Username already taken" });
+    }
+}));
+// User login
+app.post("/login", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { username, password } = req.body;
+    const user = yield prisma.user.findUnique({
+        where: { username },
+    });
+    if (user && (yield bcrypt_1.default.compare(password, user.password))) {
+        const token = jsonwebtoken_1.default.sign({ userId: user.id }, jwtSecret, { expiresIn: "1h" });
+        res.json({ token: token, userId: user.id });
+    }
+    else {
+        res.status(401).json({ error: "Invalid credentials" });
+    }
+}));
 // Endpoint to send a friend request
-app.post("/sendRequest", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { userId, requesterId } = req.body;
+app.post("/sendRequest", authenticateToken, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const userId = Number(req.headers.userId);
+    const { requesterId } = req.body;
     const newRequest = yield prisma.pendingRequest.create({
         data: {
             userId,
@@ -83,8 +126,9 @@ app.post("/sendRequest", (req, res) => __awaiter(void 0, void 0, void 0, functio
     res.json(newRequest);
 }));
 // Endpoint to accept a friend request
-app.post("/acceptRequest", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { userId, requesterId } = req.body;
+app.post("/acceptRequest", authenticateToken, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const userId = Number(req.headers.userId);
+    const { requesterId } = req.body;
     // Create connection for both users
     yield prisma.connection.createMany({
         data: [
@@ -102,8 +146,8 @@ app.post("/acceptRequest", (req, res) => __awaiter(void 0, void 0, void 0, funct
     res.json({ msg: "Request accepted" });
 }));
 // Endpoint to get a user's friends
-app.get("/friends/:userId", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const userId = parseInt(req.params.userId);
+app.get("/friends", authenticateToken, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const userId = Number(req.headers.userId);
     const user = yield prisma.user.findUnique({
         where: { id: userId },
         include: { connections: { include: { friend: true } } },
@@ -111,8 +155,8 @@ app.get("/friends/:userId", (req, res) => __awaiter(void 0, void 0, void 0, func
     res.json(user === null || user === void 0 ? void 0 : user.connections.map((conn) => conn.friend));
 }));
 // Endpoint to get a user's messages with a friend
-app.get("/messages/:userId/:friendId", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const userId = parseInt(req.params.userId);
+app.get("/messages/:friendId", authenticateToken, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const userId = Number(req.headers.userId);
     const friendId = parseInt(req.params.friendId);
     const messages = yield prisma.message.findMany({
         where: {

@@ -8,15 +8,17 @@ generator client {
 }
 
 model User {
-  id               Int               @id @default(autoincrement())
-  username         String            @unique
-  connections      Connection[]      @relation("UserConnections")
-  friendConnections Connection[]     @relation("FriendConnections")
-  pendingRequests  PendingRequest[]  @relation("UserPendingRequests")
-  requesterPendingRequests PendingRequest[] @relation("RequesterPendingRequests")
-  sentMessages     Message[]         @relation("SentMessages")
-  receivedMessages Message[]         @relation("ReceivedMessages")
+  id                         Int               @id @default(autoincrement())
+  username                   String            @unique
+  password                   String            // Add the password field
+  connections                Connection[]      @relation("UserConnections")
+  friendConnections          Connection[]      @relation("FriendConnections")
+  pendingRequests            PendingRequest[]  @relation("UserPendingRequests")
+  requesterPendingRequests   PendingRequest[]  @relation("RequesterPendingRequests")
+  sentMessages               Message[]         @relation("SentMessages")
+  receivedMessages           Message[]         @relation("ReceivedMessages")
 }
+
 
 model Message {
   id        Int      @id @default(autoincrement())

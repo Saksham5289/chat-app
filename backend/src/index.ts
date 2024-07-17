@@ -1,25 +1,43 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import http from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import cors from "cors";
 
 const app = express();
 const port = 3000;
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
-
 const prisma = new PrismaClient();
+const jwtSecret = "your_jwt_secret";
+// const cors = require("cors");
+
+// Middleware to parse JSON requests
+app.use(cors());
+app.use(express.json());
+
+// Helper function to verify JWT
+const authenticateToken = (req: Request, res: Response, next: Function) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(" ")[1];
+  if (!token) return res.sendStatus(401);
+
+  jwt.verify(token, jwtSecret, (err: any, user: any) => {
+    if (err) return res.sendStatus(403);
+    // req.user = user;
+    req.headers.userId = user.userId;
+    next();
+  });
+};
+// Store connected clients with their user IDs
 
 interface Client {
   userId: number;
   ws: WebSocket;
 }
-
-// Store connected clients with their user IDs
 let clients: Client[] = [];
-
-// Middleware to parse JSON requests
-app.use(express.json());
 
 // Handle WebSocket connections
 wss.on("connection", (ws) => {
@@ -31,28 +49,20 @@ wss.on("connection", (ws) => {
     if (parsedMessage.type === "connect") {
       userId = parsedMessage.userId;
       clients.push({ userId, ws });
-      clients.forEach((a) => {
-        console.log(a.userId);
-      });
     }
 
     if (parsedMessage.type === "message") {
       const { senderId, receiverId, content } = parsedMessage;
 
       // Save message to database
-      // const newMessage = await prisma.message.create({
-      //   data: {
-      //     content,
-      //     senderId,
-      //     receiverId,
-      //   },
-      // });
+      const newMessage = await prisma.message.create({
+        data: {
+          content,
+          senderId,
+          receiverId,
+        },
+      });
 
-      const newMessage = {
-        content,
-        senderId,
-        receiverId,
-      };
       // Find the recipient client and send the message if connected
       const recipientClient = clients.find(
         (client) => client.userId === receiverId
@@ -78,9 +88,44 @@ app.get("/health", (req, res) => {
   res.json({ msg: "I am healthy" });
 });
 
+// User registration
+app.post("/signup", async (req, res) => {
+  const { username, password } = req.body;
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  try {
+    const newUser = await prisma.user.create({
+      data: {
+        username,
+        password: hashedPassword,
+      },
+    });
+    res.json(newUser);
+  } catch (error) {
+    res.status(400).json({ error: "Username already taken" });
+  }
+});
+
+// User login
+app.post("/login", async (req, res) => {
+  const { username, password } = req.body;
+
+  const user = await prisma.user.findUnique({
+    where: { username },
+  });
+
+  if (user && (await bcrypt.compare(password, user.password))) {
+    const token = jwt.sign({ userId: user.id }, jwtSecret, { expiresIn: "1h" });
+    res.json({ token: token, userId: user.id });
+  } else {
+    res.status(401).json({ error: "Invalid credentials" });
+  }
+});
+
 // Endpoint to send a friend request
-app.post("/sendRequest", async (req, res) => {
-  const { userId, requesterId } = req.body;
+app.post("/sendRequest", authenticateToken, async (req, res) => {
+  const userId = Number(req.headers.userId);
+  const { requesterId } = req.body;
 
   const newRequest = await prisma.pendingRequest.create({
     data: {
@@ -93,8 +138,9 @@ app.post("/sendRequest", async (req, res) => {
 });
 
 // Endpoint to accept a friend request
-app.post("/acceptRequest", async (req, res) => {
-  const { userId, requesterId } = req.body;
+app.post("/acceptRequest", authenticateToken, async (req, res) => {
+  const userId = Number(req.headers.userId);
+  const { requesterId } = req.body;
 
   // Create connection for both users
   await prisma.connection.createMany({
@@ -116,8 +162,8 @@ app.post("/acceptRequest", async (req, res) => {
 });
 
 // Endpoint to get a user's friends
-app.get("/friends/:userId", async (req, res) => {
-  const userId = parseInt(req.params.userId);
+app.get("/friends", authenticateToken, async (req, res) => {
+  const userId = Number(req.headers.userId);
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -128,8 +174,8 @@ app.get("/friends/:userId", async (req, res) => {
 });
 
 // Endpoint to get a user's messages with a friend
-app.get("/messages/:userId/:friendId", async (req, res) => {
-  const userId = parseInt(req.params.userId);
+app.get("/messages/:friendId", authenticateToken, async (req, res) => {
+  const userId = Number(req.headers.userId);
   const friendId = parseInt(req.params.friendId);
 
   const messages = await prisma.message.findMany({

@@ -8,8 +8,6 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
 export const Signup = () => {
-  const [firstName, setFirstName] = useState("");
-  const [slang, setSlang] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
@@ -20,26 +18,13 @@ export const Signup = () => {
         <div className="rounded-lg bg-white w-80 text-center p-2 h-max px-4">
           <Heading label={"Sign up"} />
           <SubHeading label={"Enter your infromation to create an account"} />
-          <InputBox
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              setFirstName(e.target.value);
-            }}
-            placeholder="John"
-            label={"First Name"}
-          />
-          <InputBox
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              setSlang(e.target.value);
-            }}
-            placeholder="Doe"
-            label={"slang"}
-          />
+
           <InputBox
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
               setUsername(e.target.value);
             }}
-            placeholder="harkirat@gmail.com"
-            label={"Email"}
+            placeholder="saksham_123"
+            label={"username"}
           />
           <InputBox
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -52,16 +37,15 @@ export const Signup = () => {
             <Button
               onClick={async () => {
                 const response = await axios.post(
-                  "http://localhost:3000/auth/register",
+                  "http://localhost:3000/signup",
                   {
-                   email: username,
-                    name:firstName,
-                    slang:slang,
-                    password:password,
+                    username: username,
+                    password: password,
                   }
                 );
-                localStorage.setItem("token", response.data.token);
-                navigate("/dashboard");
+                console.log(response);
+                // localStorage.setItem("token", response.data.token);
+                // navigate("/dashboard");
               }}
               label={"Sign up"}
             />
