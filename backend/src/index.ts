@@ -115,7 +115,7 @@ app.post("/login", async (req, res) => {
   });
 
   if (user && (await bcrypt.compare(password, user.password))) {
-    const token = jwt.sign({ userId: user.id }, jwtSecret, { expiresIn: "1h" });
+    const token = jwt.sign({ userId: user.id }, jwtSecret);
     res.json({ token: token, userId: user.id });
   } else {
     res.status(401).json({ error: "Invalid credentials" });
@@ -174,10 +174,10 @@ app.get("/friends", authenticateToken, async (req, res) => {
 });
 
 // Endpoint to get a user's messages with a friend
-app.get("/messages/:friendId", authenticateToken, async (req, res) => {
-  const userId = Number(req.headers.userId);
+app.get("/messages/:friendId", async (req, res) => {
+  const userId = Number(req.headers.userid);
   const friendId = parseInt(req.params.friendId);
-
+  console.log(req.headers);
   const messages = await prisma.message.findMany({
     where: {
       OR: [

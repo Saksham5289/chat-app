@@ -106,7 +106,7 @@ app.post("/login", (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         where: { username },
     });
     if (user && (yield bcrypt_1.default.compare(password, user.password))) {
-        const token = jsonwebtoken_1.default.sign({ userId: user.id }, jwtSecret, { expiresIn: "1h" });
+        const token = jsonwebtoken_1.default.sign({ userId: user.id }, jwtSecret);
         res.json({ token: token, userId: user.id });
     }
     else {
@@ -155,9 +155,10 @@ app.get("/friends", authenticateToken, (req, res) => __awaiter(void 0, void 0, v
     res.json(user === null || user === void 0 ? void 0 : user.connections.map((conn) => conn.friend));
 }));
 // Endpoint to get a user's messages with a friend
-app.get("/messages/:friendId", authenticateToken, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const userId = Number(req.headers.userId);
+app.get("/messages/:friendId", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const userId = Number(req.headers.userid);
     const friendId = parseInt(req.params.friendId);
+    console.log(req.headers);
     const messages = yield prisma.message.findMany({
         where: {
             OR: [
