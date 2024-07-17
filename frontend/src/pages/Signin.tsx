@@ -39,14 +39,14 @@ export const Signin = () => {
             <Button
               onClick={async () => {
                 const response = await axios.post(
-                  "http://localhost:3000/auth/register",
+                  "http://localhost:3000/login",
                   {
                     username: username,
-
                     password: password,
                   }
                 );
                 localStorage.setItem("token", response.data.token);
+                localStorage.setItem("userId", response.data.userId);
                 navigate("/dashboard");
               }}
               label={"Sign In"}
