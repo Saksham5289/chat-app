@@ -10,13 +10,15 @@ interface Message {
   receiverId: number;
 }
 
-interface centercenterProps {
+interface CenterCenterProps {
   friendId: number;
   userId: number; // User's ID in the app. It is required to fetch messages.
 }
 
-export const CenterCenter = ({ friendId, userId }: centercenterProps) => {
+export const CenterCenter = ({ friendId, userId }: CenterCenterProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [ws, setWs] = useState<WebSocket | null>(null);
+  const [newMessage, setNewMessage] = useState("");
 
   useEffect(() => {
     // Function to fetch messages
@@ -39,15 +41,77 @@ export const CenterCenter = ({ friendId, userId }: centercenterProps) => {
     fetchMessages();
   }, [friendId, userId]);
 
+  useEffect(() => {
+    // Open WebSocket connection
+    const socket = new WebSocket(`ws://localhost:3000`);
+
+    socket.onopen = () => {
+      console.log("WebSocket connection established");
+      // Send a connect message when the WebSocket connection is established
+      socket.send(JSON.stringify({ type: "connect", userId }));
+    };
+
+    socket.onmessage = (event) => {
+      const newMessage: Message = JSON.parse(event.data);
+      setMessages((prevMessages) => [...prevMessages, newMessage]);
+    };
+
+    socket.onclose = () => {
+      console.log("WebSocket connection closed");
+    };
+
+    socket.onerror = (error) => {
+      console.error("WebSocket error:", error);
+    };
+
+    setWs(socket);
+
+    // Clean up WebSocket connection when component unmounts
+    return () => {
+      socket.close();
+    };
+  }, [userId]);
+
+  const sendMessage = () => {
+    if (ws && newMessage.trim() !== "") {
+      const message = {
+        type: "message",
+        content: newMessage,
+        senderId: userId,
+        receiverId: friendId,
+        createdAt: new Date().toISOString(),
+      };
+      ws.send(JSON.stringify(message));
+      setNewMessage(""); // Clear the input box after sending
+    }
+  };
+
   return (
-    <div className="flex-grow border overflow-y-auto h-0 p-4 bg-gray-200">
-      {messages.map((msg, index) => (
-        <Message
-          key={index}
-          text={msg.content}
-          isSender={msg.senderId === userId}
+    <div className="flex flex-col h-full">
+      <div className="flex-grow border overflow-y-auto h-0 p-4 bg-gray-200">
+        {messages.map((msg, index) => (
+          <Message
+            key={index}
+            text={msg.content}
+            isSender={msg.senderId === userId}
+          />
+        ))}
+      </div>
+      <div className="p-4 bg-gray-100">
+        <input
+          type="text"
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+          placeholder="Type your message..."
+          className="border p-2 w-full"
         />
-      ))}
+        <button
+          onClick={sendMessage}
+          className="bg-blue-500 text-white p-2 mt-2"
+        >
+          Send
+        </button>
+      </div>
     </div>
   );
 };

@@ -41,7 +41,7 @@ let clients: Client[] = [];
 
 // Handle WebSocket connections
 wss.on("connection", (ws) => {
-  let userId: number;
+  let userId;
 
   ws.on("message", async (message) => {
     const parsedMessage = JSON.parse(message.toString());
@@ -63,13 +63,13 @@ wss.on("connection", (ws) => {
         },
       });
 
-      // Find the recipient client and send the message if connected
-      const recipientClient = clients.find(
-        (client) => client.userId === receiverId
-      );
-      if (recipientClient && recipientClient.ws.readyState === WebSocket.OPEN) {
-        recipientClient.ws.send(JSON.stringify(newMessage));
-      }
+      // Broadcast the message to both the sender and the recipient
+      [senderId, receiverId].forEach((id) => {
+        const client = clients.find((client) => client.userId === id);
+        if (client && client.ws.readyState === WebSocket.OPEN) {
+          client.ws.send(JSON.stringify(newMessage));
+        }
+      });
     }
   });
 
@@ -177,7 +177,7 @@ app.get("/friends", authenticateToken, async (req, res) => {
 app.get("/messages/:friendId", async (req, res) => {
   const userId = Number(req.headers.userid);
   const friendId = parseInt(req.params.friendId);
-  console.log(req.headers);
+
   const messages = await prisma.message.findMany({
     where: {
       OR: [
