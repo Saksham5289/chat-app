@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Message } from "./Message";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "../redux/rootState";
+import { addNotification } from "../redux/slices/notificationSlice";
 
 interface Message {
   id: number;
@@ -16,6 +19,9 @@ interface CenterCenterProps {
 }
 
 export const CenterCenter = ({ friendId, userId }: CenterCenterProps) => {
+  const state = useSelector((state: RootState) => state);
+  const dispatch = useDispatch();
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [ws, setWs] = useState<WebSocket | null>(null);
   const [newMessage, setNewMessage] = useState("");
@@ -54,6 +60,10 @@ export const CenterCenter = ({ friendId, userId }: CenterCenterProps) => {
     socket.onmessage = (event) => {
       const newMessage: Message = JSON.parse(event.data);
       setMessages((prevMessages) => [...prevMessages, newMessage]);
+
+      if (newMessage.senderId !== userId) {
+        dispatch(addNotification(state.user.userId));
+      }
     };
 
     socket.onclose = () => {

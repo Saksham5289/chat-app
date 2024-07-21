@@ -109,52 +109,20 @@ app.post("/login", (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     });
     if (user && (yield bcrypt_1.default.compare(password, user.password))) {
         const token = jsonwebtoken_1.default.sign({ userId: user.id }, jwtSecret);
-        res.json({ token: token, userId: user.id });
+        res.json({ token: token, user });
     }
     else {
         res.status(401).json({ error: "Invalid credentials" });
     }
 }));
-// Endpoint to send a friend request
-app.post("/sendRequest", authenticateToken, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const userId = Number(req.headers.userId);
-    const { requesterId } = req.body;
-    const newRequest = yield prisma.pendingRequest.create({
-        data: {
-            userId,
-            requesterId,
-        },
-    });
-    res.json(newRequest);
-}));
-// Endpoint to accept a friend request
-app.post("/acceptRequest", authenticateToken, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const userId = Number(req.headers.userId);
-    const { requesterId } = req.body;
-    // Create connection for both users
-    yield prisma.connection.createMany({
-        data: [
-            { userId, friendId: requesterId },
-            { userId: requesterId, friendId: userId },
-        ],
-    });
-    // Delete the pending request
-    yield prisma.pendingRequest.deleteMany({
-        where: {
-            userId,
-            requesterId,
-        },
-    });
-    res.json({ msg: "Request accepted" });
-}));
-// Endpoint to get a user's friends
-app.get("/friends", authenticateToken, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const userId = Number(req.headers.userId);
-    const user = yield prisma.user.findUnique({
-        where: { id: userId },
-        include: { connections: { include: { friend: true } } },
-    });
-    res.json(user === null || user === void 0 ? void 0 : user.connections.map((conn) => conn.friend));
+app.get("/users", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const users = yield prisma.user.findMany();
+        res.json(users);
+    }
+    catch (error) {
+        res.status(500).json({ error: "Failed to fetch users" });
+    }
 }));
 // Endpoint to get a user's messages with a friend
 app.get("/messages/:friendId", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -173,3 +141,44 @@ app.get("/messages/:friendId", (req, res) => __awaiter(void 0, void 0, void 0, f
 server.listen(port, () => {
     console.log(`Server is listening on port ${port}`);
 });
+// Endpoint to send a friend request
+// app.post("/sendRequest", authenticateToken, async (req, res) => {
+//   const userId = Number(req.headers.userId);
+//   const { requesterId } = req.body;
+//   const newRequest = await prisma.pendingRequest.create({
+//     data: {
+//       userId,
+//       requesterId,
+//     },
+//   });
+//   res.json(newRequest);
+// });
+// // Endpoint to accept a friend request
+// app.post("/acceptRequest", authenticateToken, async (req, res) => {
+//   const userId = Number(req.headers.userId);
+//   const { requesterId } = req.body;
+//   // Create connection for both users
+//   await prisma.connection.createMany({
+//     data: [
+//       { userId, friendId: requesterId },
+//       { userId: requesterId, friendId: userId },
+//     ],
+//   });
+//   // Delete the pending request
+//   await prisma.pendingRequest.deleteMany({
+//     where: {
+//       userId,
+//       requesterId,
+//     },
+//   });
+//   res.json({ msg: "Request accepted" });
+// });
+// Endpoint to get a user's friends
+// app.get("/friends", authenticateToken, async (req, res) => {
+//   const userId = Number(req.headers.userId);
+//   const user = await prisma.user.findUnique({
+//     where: { id: userId },
+//     include: { connections: { include: { friend: true } } },
+//   });
+//   res.json(user?.connections.map((conn) => conn.friend));
+// });

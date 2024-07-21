@@ -5,8 +5,12 @@ import { PeopleToChat } from "./PeopleToChat";
 import { PersonToChat } from "./PersonToChat";
 import profilepic from "../assets/profilepic.png";
 import { PhoneCall, Search, Settings, Video } from "react-feather";
+import { useSelector } from "react-redux";
+import { RootState } from "../redux/rootState";
 
 export const CenterTop = () => {
+  const state = useSelector((state: RootState) => state);
+  console.log(state.user.username);
   return (
     <div className="border  p-2 bg-green-50">
       <div className="flex justify-between items-center">
@@ -21,7 +25,7 @@ export const CenterTop = () => {
 
       <div className="flex justify-between items-center">
         <PersonToChat
-          iconTitle="Jacky"
+          iconTitle={state.friend.friendName}
           imageUrl={profilepic}
           statusTitle="online"
         />
