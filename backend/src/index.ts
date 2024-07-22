@@ -84,12 +84,12 @@ wss.on("connection", (ws) => {
 });
 
 // Health check endpoint
-app.get("/health", (req, res) => {
+app.get("/api/health", (req, res) => {
   res.json({ msg: "I am healthy" });
 });
 
 // User registration
-app.post("/signup", async (req, res) => {
+app.post("/api/signup", async (req, res) => {
   const { username, password } = req.body;
   const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -107,7 +107,7 @@ app.post("/signup", async (req, res) => {
 });
 
 // User login
-app.post("/login", async (req, res) => {
+app.post("/api/login", async (req, res) => {
   const { username, password } = req.body;
 
   const user = await prisma.user.findUnique({
@@ -122,7 +122,7 @@ app.post("/login", async (req, res) => {
   }
 });
 
-app.get("/users", async (req, res) => {
+app.get("/api/users", async (req, res) => {
   try {
     const users = await prisma.user.findMany();
     res.json(users);
@@ -132,7 +132,7 @@ app.get("/users", async (req, res) => {
 });
 
 // Endpoint to get a user's messages with a friend
-app.get("/messages/:friendId", async (req, res) => {
+app.get("/api/messages/:friendId", async (req, res) => {
   const userId = Number(req.headers.userid);
   const friendId = parseInt(req.params.friendId);
 

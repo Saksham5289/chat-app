@@ -81,11 +81,11 @@ wss.on("connection", (ws) => {
     });
 });
 // Health check endpoint
-app.get("/health", (req, res) => {
+app.get("/api/health", (req, res) => {
     res.json({ msg: "I am healthy" });
 });
 // User registration
-app.post("/signup", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.post("/api/signup", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { username, password } = req.body;
     const hashedPassword = yield bcrypt_1.default.hash(password, 10);
     try {
@@ -102,7 +102,7 @@ app.post("/signup", (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     }
 }));
 // User login
-app.post("/login", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.post("/api/login", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { username, password } = req.body;
     const user = yield prisma.user.findUnique({
         where: { username },
@@ -115,7 +115,7 @@ app.post("/login", (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         res.status(401).json({ error: "Invalid credentials" });
     }
 }));
-app.get("/users", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.get("/api/users", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const users = yield prisma.user.findMany();
         res.json(users);
@@ -125,7 +125,7 @@ app.get("/users", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
 }));
 // Endpoint to get a user's messages with a friend
-app.get("/messages/:friendId", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.get("/api/messages/:friendId", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const userId = Number(req.headers.userid);
     const friendId = parseInt(req.params.friendId);
     const messages = yield prisma.message.findMany({
