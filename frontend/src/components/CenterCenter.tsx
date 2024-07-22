@@ -31,7 +31,7 @@ export const CenterCenter = ({ friendId, userId }: CenterCenterProps) => {
     const fetchMessages = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:3000/messages/${friendId}`,
+          `http://localhost:3000/api/messages/${friendId}`,
           {
             headers: {
               userid: userId, // Pass userId as a header
