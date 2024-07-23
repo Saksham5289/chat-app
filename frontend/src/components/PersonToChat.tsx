@@ -1,45 +1,37 @@
+import React from "react";
 import { CircularCount } from "./CircularCount";
-import CircularIcon from "./CircularIcon";
-import { FontMono } from "./FontMono";
-import { FontSans } from "./FontSans";
-import friendPic from "../assets/profilepic.png";
+import { useSelector } from "react-redux";
+import { RootState } from "../redux/rootState";
 
-interface PersonToChat {
+interface PersonToChatProps {
   iconTitle: string;
-  imageUrl: string; // This will be the image of the person.
-  notificationCount?: number; // This will be the number of notifications for that feature.
-  statusTitle: string;
+  imageUrl: string;
+  onClick: () => void;
+  fid: number;
 }
-export const PersonToChat = ({
+
+export const PersonToChat: React.FC<PersonToChatProps> = ({
   iconTitle,
-  notificationCount,
   imageUrl,
-  statusTitle,
-}: PersonToChat) => {
+  onClick,
+  fid,
+}) => {
+  const notifications = useSelector((state: RootState) => state.notifications);
+  console.log("hi", fid);
+  console.log(iconTitle);
+  console.log("hey,", notifications);
   return (
-    <div className="flex justify-between items-center">
-      <div className="flex items-center space-x-2">
-        <CircularIcon dim="40px" url={imageUrl} />
-        <div>
-          <FontSans
-            title={iconTitle}
-            fontSize="16px"
-            fontWeight={500}
-            color="black"
-          />
-          <FontMono
-            title={statusTitle}
-            fontSize="10px"
-            fontWeight={300}
-            color="grey"
-          />
-        </div>
+    <div
+      className="flex items-center space-x-3 cursor-pointer"
+      onClick={onClick}
+    >
+      <img src={imageUrl} alt={iconTitle} className="h-10 w-10 rounded-full" />
+      <div>
+        <p>{iconTitle}</p>
+        {/* {notifications[fid] && (
+          <CircularCount dim="10px" count={notifications[fid]} />
+        )} */}
       </div>
-      {notificationCount !== undefined && (
-        <div className="ml-4">
-          <CircularCount dim="25px" count={notificationCount} />
-        </div>
-      )}
     </div>
   );
 };

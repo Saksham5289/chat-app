@@ -6,6 +6,8 @@ import { InputBox } from "../components/InputBox";
 import { SubHeading } from "../components/SubHeading";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import { setUser } from "../redux/slices/userSlice";
 
 export const Signin = () => {
   const [firstName, setFirstName] = useState("");
@@ -13,6 +15,8 @@ export const Signin = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+
+  const dispatch = useDispatch();
 
   return (
     <div className="bg-slate-300 h-screen flex justify-center">
@@ -39,14 +43,21 @@ export const Signin = () => {
             <Button
               onClick={async () => {
                 const response = await axios.post(
-                  "http://localhost:3000/auth/register",
+                  "http://localhost:3000/api/login",
                   {
                     username: username,
-
                     password: password,
                   }
                 );
                 localStorage.setItem("token", response.data.token);
+                localStorage.setItem("userId", response.data.user.id);
+                localStorage.setItem("username", response.data.user.username);
+                dispatch(
+                  setUser({
+                    userId: localStorage.getItem("userId"),
+                    username: localStorage.getItem("username"),
+                  })
+                );
                 navigate("/dashboard");
               }}
               label={"Sign In"}
@@ -55,7 +66,7 @@ export const Signin = () => {
           <BottomWarning
             label={"Already have an account?"}
             buttonText={"Sign Up"}
-            to={"/signin"}
+            to={"/signup"}
           />
         </div>
       </div>
