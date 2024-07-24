@@ -49,7 +49,7 @@ export const CenterCenter = ({ friendId, userId }: CenterCenterProps) => {
 
   useEffect(() => {
     // Open WebSocket connection
-    const socket = new WebSocket(`ws://43.204.215.242`);
+    const socket = new WebSocket(`ws://43.204.215.242/ws`);
 
     socket.onopen = () => {
       console.log("WebSocket connection established");
