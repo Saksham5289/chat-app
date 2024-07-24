@@ -21,7 +21,7 @@ export const PeopleToChat = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await axios.get("http://localhost:3000/api/users");
+        const response = await axios.get("http://43.204.215.242/api/users");
         setUsers(response.data);
       } catch (error) {
         console.error("Error fetching users:", error);
