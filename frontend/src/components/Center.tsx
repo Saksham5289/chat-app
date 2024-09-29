@@ -21,7 +21,7 @@ export const Center = () => {
     <div className="col-span-3 border h-full flex flex-col">
       <CenterTop />
       {friendId && <CenterCenter friendId={friendId} userId={userId} />}
-      <CenterBottom />
+      {/* <CenterBottom /> */}
     </div>
   );
 };

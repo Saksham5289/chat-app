@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import axios from "axios";
 import friendPic from "../assets/profilepic.png";
 import { PersonToChat } from "./PersonToChat";
-import { setFriendId, setFriendName } from "../redux/slices/friendSlice"; // Assume you have this action
+import { setFriendId, setFriendName } from "../redux/slices/friendSlice";
 import { RootState } from "../redux/rootState";
 
 interface User {
@@ -16,12 +16,10 @@ export const PeopleToChat = () => {
   const dispatch = useDispatch();
   const state = useSelector((state: RootState) => state);
 
-  console.log(state.notifications.notifications["2"]);
-
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await axios.get("http://43.204.215.242/api/users");
+        const response = await axios.get("http://localhost:3000/api/users");
         setUsers(response.data);
       } catch (error) {
         console.error("Error fetching users:", error);
@@ -32,13 +30,12 @@ export const PeopleToChat = () => {
   }, []);
 
   const handleUserClick = (userId: number, username: string) => {
-    console.log(userId);
     dispatch(setFriendId(userId));
     dispatch(setFriendName(username));
   };
 
   return (
-    <div className="space-y-5">
+    <div className="max-h-80 overflow-y-auto space-y-5">
       {users.map((user) => (
         <PersonToChat
           key={user.id}

@@ -37,15 +37,15 @@ export const Signup = () => {
             <Button
               onClick={async () => {
                 const response = await axios.post(
-                  "http://43.204.215.242/api/signup",
+                  "http://localhost:3000/api/signup",
                   {
                     username: username,
                     password: password,
                   }
                 );
                 console.log(response);
-                // localStorage.setItem("token", response.data.token);
-                // navigate("/dashboard");
+                localStorage.setItem("token", response.data.token);
+                navigate("/dashboard");
               }}
               label={"Sign up"}
             />
