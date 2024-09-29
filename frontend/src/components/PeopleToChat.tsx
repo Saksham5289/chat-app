@@ -53,5 +53,9 @@ export const PeopleToChat = () => {
 //left second
 //right branch
 
+<<<<<<< HEAD
 //lefty 1
 //lefty 2
+=======
+//righty1
+>>>>>>> righty
