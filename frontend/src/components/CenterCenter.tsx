@@ -31,7 +31,7 @@ export const CenterCenter = ({ friendId, userId }: CenterCenterProps) => {
     const fetchMessages = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:3000/api/messages/${friendId}`,
+          `http://13.232.169.110/api/messages/${friendId}`,
           {
             headers: {
               userid: userId, // Pass userId as a header
@@ -49,7 +49,7 @@ export const CenterCenter = ({ friendId, userId }: CenterCenterProps) => {
 
   useEffect(() => {
     // Open WebSocket connection
-    const socket = new WebSocket(`ws://localhost:3000/ws/`);
+    const socket = new WebSocket(`ws://13.232.169.110/ws/`);
 
     socket.onopen = () => {
       console.log("WebSocket connection established");
