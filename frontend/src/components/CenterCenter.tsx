@@ -83,16 +83,23 @@ export const CenterCenter = ({ friendId, userId }: CenterCenterProps) => {
   }, [userId]);
 
   const sendMessage = () => {
-    if (ws && newMessage.trim() !== "") {
-      const message = {
-        type: "message",
-        content: newMessage,
-        senderId: userId,
-        receiverId: friendId,
-        createdAt: new Date().toISOString(),
-      };
-      ws.send(JSON.stringify(message));
-      setNewMessage(""); // Clear the input box after sending
+    if (ws) {
+      // Check if the WebSocket is in OPEN state before sending
+      if (ws.readyState === WebSocket.OPEN) {
+        const message = {
+          type: "message",
+          content: newMessage,
+          senderId: userId,
+          receiverId: friendId,
+          createdAt: new Date().toISOString(),
+        };
+        ws.send(JSON.stringify(message));
+        setNewMessage(""); // Clear the input box after sending
+      } else {
+        console.warn("WebSocket is not open. Current state:", ws.readyState);
+      }
+    } else {
+      console.error("WebSocket instance is null");
     }
   };
 
